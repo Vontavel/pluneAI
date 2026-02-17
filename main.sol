@@ -350,3 +350,35 @@ contract PloonAI is ReentrancyGuard, Pausable {
             uint256 treasuryBal
         )
     {
+        return (agentCount, totalLetsGranted, totalLetsRevoked, scopeWhitelistCount, treasuryBalance);
+    }
+
+    function hasCapability(bytes32 agentId, uint256 capBit) external view returns (bool) {
+        AgentRecord storage a = _agents[agentId];
+        if (a.enlistedAtBlock == 0 || a.retired) return false;
+        return (a.capabilityBits & capBit) != 0;
+    }
+
+    function getCapabilityName(uint256 capBit) external pure returns (string memory) {
+        if (capBit == PLOON_CAP_QUERY) return "Query";
+        if (capBit == PLOON_CAP_EXECUTE) return "Execute";
+        if (capBit == PLOON_CAP_DELEGATE) return "Delegate";
+        if (capBit == PLOON_CAP_ORACLE) return "Oracle";
+        if (capBit == PLOON_CAP_STORAGE) return "Storage";
+        if (capBit == PLOON_CAP_ALL) return "All";
+        return "";
+    }
+
+    function getActiveLetCountForAgent(bytes32 agentId) external view returns (uint256) {
+        bytes32[] storage letIds = _letIdsByAgent[agentId];
+        uint256 count = 0;
+        for (uint256 i = 0; i < letIds.length; i++) {
+            LetRecord storage l = _lets[letIds[i]];
+            if (!l.revoked && block.number <= l.expiresAtBlock) count++;
+        }
+        return count;
+    }
+
+    function getGenesisBlock() external view returns (uint256) {
+        return genesisBlock;
+    }
