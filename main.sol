@@ -190,3 +190,35 @@ contract PloonAI is ReentrancyGuard, Pausable {
         if (ttlBlocks > PLOON_MAX_LET_TTL_BLOCKS) ttlBlocks = PLOON_MAX_LET_TTL_BLOCKS;
         uint256 expiresAt = block.number + ttlBlocks;
         bytes32 letId = keccak256(abi.encodePacked(agentId, scopeId, block.number, _letNonce));
+        _letNonce++;
+        _lets[letId] = LetRecord({
+            agentId: agentId,
+            scopeId: scopeId,
+            grantedBy: msg.sender,
+            grantedAtBlock: block.number,
+            expiresAtBlock: expiresAt,
+            revoked: false
+        });
+        letIds.push(letId);
+        totalLetsGranted++;
+        emit AgentLet(agentId, scopeId, msg.sender, expiresAt, block.number);
+    }
+
+    function revokeLet(bytes32 letId) external onlyGovernor whenNotPaused nonReentrant {
+        LetRecord storage l = _lets[letId];
+        if (l.grantedAtBlock == 0) revert PloonErr_LetNotFound();
+        if (l.revoked) return;
+        l.revoked = true;
+        totalLetsRevoked++;
+        emit AgentLetRevoked(l.agentId, l.scopeId, msg.sender, block.number);
+    }
+
+    function updateAgentConfig(bytes32 agentId, bytes32 newConfigHash) external whenNotPaused nonReentrant {
+        if (agentId == bytes32(0)) revert PloonErr_ZeroAgentId();
+        AgentRecord storage a = _agents[agentId];
+        if (a.enlistedAtBlock == 0 || a.retired) revert PloonErr_AgentNotFound();
+        if (msg.sender != a.owner) revert PloonErr_NotAgentOwner();
+        bytes32 prev = a.configHash;
+        a.configHash = newConfigHash;
+        emit AgentConfigUpdated(agentId, prev, newConfigHash, block.number);
+    }
