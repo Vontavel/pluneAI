@@ -414,3 +414,35 @@ contract PloonAI is ReentrancyGuard, Pausable {
         AgentRecord storage a = _agents[agentId];
         if (a.enlistedAtBlock == 0) revert PloonErr_AgentNotFound();
         return a.owner;
+    }
+
+    function getAgentConfigHash(bytes32 agentId) external view returns (bytes32) {
+        AgentRecord storage a = _agents[agentId];
+        if (a.enlistedAtBlock == 0) revert PloonErr_AgentNotFound();
+        return a.configHash;
+    }
+
+    function isAgentRetired(bytes32 agentId) external view returns (bool) {
+        return _agents[agentId].retired;
+    }
+
+    function getAgentEnlistedBlock(bytes32 agentId) external view returns (uint256) {
+        AgentRecord storage a = _agents[agentId];
+        if (a.enlistedAtBlock == 0) revert PloonErr_AgentNotFound();
+        return a.enlistedAtBlock;
+    }
+
+    function getMaxAgents() external pure returns (uint256) {
+        return PLOON_MAX_AGENTS;
+    }
+
+    function getMaxLetsPerAgent() external pure returns (uint256) {
+        return PLOON_MAX_LETS_PER_AGENT;
+    }
+
+    function getDefaultLetTtlBlocks() external pure returns (uint256) {
+        return PLOON_DEFAULT_LET_TTL_BLOCKS;
+    }
+
+    function getVersion() external pure returns (uint256) {
+        return PLOON_VERSION;
