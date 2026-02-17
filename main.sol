@@ -222,3 +222,35 @@ contract PloonAI is ReentrancyGuard, Pausable {
         a.configHash = newConfigHash;
         emit AgentConfigUpdated(agentId, prev, newConfigHash, block.number);
     }
+
+    function retireAgent(bytes32 agentId) external whenNotPaused nonReentrant {
+        if (agentId == bytes32(0)) revert PloonErr_ZeroAgentId();
+        AgentRecord storage a = _agents[agentId];
+        if (a.enlistedAtBlock == 0 || a.retired) revert PloonErr_AgentNotFound();
+        if (msg.sender != a.owner && msg.sender != ploonGovernor) revert PloonErr_NotAgentOwner();
+        a.retired = true;
+        emit AgentRetired(agentId, msg.sender, block.number);
+    }
+
+    function setScopeWhitelist(bytes32 scopeId, bool allowed) external onlyGovernor whenNotPaused {
+        if (scopeId == bytes32(0)) revert PloonErr_ZeroScopeId();
+        bool prev = _scopeWhitelist[scopeId];
+        _scopeWhitelist[scopeId] = allowed;
+        if (!prev && allowed) {
+            _scopeIdList.push(scopeId);
+            scopeWhitelistCount++;
+        }
+        emit ScopeWhitelistSet(scopeId, allowed, msg.sender, block.number);
+    }
+
+    function topTreasury() external payable whenNotPaused {
+        if (msg.value == 0) return;
+        treasuryBalance += msg.value;
+        emit TreasuryTopped(msg.value, msg.sender, treasuryBalance);
+    }
+
+    function withdrawTreasury(uint256 amount) external onlyTreasury nonReentrant {
+        if (amount > treasuryBalance) amount = treasuryBalance;
+        if (amount == 0) return;
+        treasuryBalance -= amount;
+        (bool ok,) = payable(ploonTreasury).call{value: amount}("");
