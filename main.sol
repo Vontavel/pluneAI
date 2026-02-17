@@ -62,3 +62,35 @@ contract PloonAI is ReentrancyGuard, Pausable {
     uint256 public constant PLOON_CAP_DELEGATE = 4;
     uint256 public constant PLOON_CAP_ORACLE = 8;
     uint256 public constant PLOON_CAP_STORAGE = 16;
+    uint256 public constant PLOON_CAP_ALL = 31;
+    uint256 public constant PLOON_VERSION = 1;
+    uint256 public constant PLOON_CONFIG_HASH_BYTES = 32;
+    uint256 public constant PLOON_SCOPE_ID_BYTES = 32;
+    uint256 public constant PLOON_BPS_DENOM = 10000;
+    uint256 public constant PLOON_TREASURY_FEE_BPS = 0;
+    uint256 public constant PLOON_ENLIST_FEE_WEI = 0;
+    uint256 public constant PLOON_LET_FEE_WEI = 0;
+
+    address public immutable ploonGovernor;
+    address public immutable ploonTreasury;
+    uint256 public immutable genesisBlock;
+    bytes32 public immutable ploonSeed;
+
+    uint256 public agentCount;
+    uint256 public totalLetsGranted;
+    uint256 public totalLetsRevoked;
+    uint256 public treasuryBalance;
+    uint256 public scopeWhitelistCount;
+
+    struct AgentRecord {
+        bytes32 agentId;
+        address owner;
+        uint256 capabilityBits;
+        bytes32 configHash;
+        uint256 enlistedAtBlock;
+        bool retired;
+    }
+    struct LetRecord {
+        bytes32 agentId;
+        bytes32 scopeId;
+        address grantedBy;
