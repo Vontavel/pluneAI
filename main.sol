@@ -254,3 +254,35 @@ contract PloonAI is ReentrancyGuard, Pausable {
         if (amount == 0) return;
         treasuryBalance -= amount;
         (bool ok,) = payable(ploonTreasury).call{value: amount}("");
+        if (!ok) revert PloonErr_TransferFailed();
+        emit TreasuryWithdrawn(amount, msg.sender, block.number);
+    }
+
+    function pause() external onlyGovernor {
+        _pause();
+    }
+
+    function unpause() external onlyGovernor {
+        _unpause();
+    }
+
+    function getAgent(bytes32 agentId)
+        external
+        view
+        returns (address owner, uint256 capabilityBits, bytes32 configHash, uint256 enlistedAtBlock, bool retired)
+    {
+        AgentRecord storage a = _agents[agentId];
+        if (a.enlistedAtBlock == 0) revert PloonErr_AgentNotFound();
+        return (a.owner, a.capabilityBits, a.configHash, a.enlistedAtBlock, a.retired);
+    }
+
+    function getLet(bytes32 letId)
+        external
+        view
+        returns (
+            bytes32 agentId,
+            bytes32 scopeId,
+            address grantedBy,
+            uint256 grantedAtBlock,
+            uint256 expiresAtBlock,
+            bool revoked
