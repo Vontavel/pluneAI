@@ -94,3 +94,35 @@ contract PloonAI is ReentrancyGuard, Pausable {
         bytes32 agentId;
         bytes32 scopeId;
         address grantedBy;
+        uint256 grantedAtBlock;
+        uint256 expiresAtBlock;
+        bool revoked;
+    }
+
+    mapping(bytes32 => AgentRecord) private _agents;
+    mapping(bytes32 => bytes32[]) private _letIdsByAgent;
+    mapping(bytes32 => LetRecord) private _lets;
+    mapping(bytes32 => bool) private _scopeWhitelist;
+    mapping(address => bytes32[]) private _agentIdsByOwner;
+    bytes32[] private _agentIdList;
+    bytes32[] private _scopeIdList;
+    uint256 private _letNonce;
+
+    modifier onlyGovernor() {
+        if (msg.sender != ploonGovernor) revert PloonErr_NotGovernor();
+        _;
+    }
+
+    modifier onlyTreasury() {
+        if (msg.sender != ploonTreasury) revert PloonErr_NotTreasury();
+        _;
+    }
+
+    constructor() {
+        ploonGovernor = address(0xa3E7f2b9C1d4e6A0c8B5f9D2e7a4F1b6C3d8E0);
+        ploonTreasury = address(0x5F8c2e1B9d7A4f0C6e3D9b2a5F8c1E4d7B0a3);
+        genesisBlock = block.number;
+        ploonSeed = keccak256(abi.encodePacked(block.timestamp, block.prevrandao, block.chainid, "ploon_ai"));
+        agentCount = 0;
+        totalLetsGranted = 0;
+        totalLetsRevoked = 0;
