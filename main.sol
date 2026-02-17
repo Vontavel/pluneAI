@@ -286,3 +286,35 @@ contract PloonAI is ReentrancyGuard, Pausable {
             uint256 grantedAtBlock,
             uint256 expiresAtBlock,
             bool revoked
+        )
+    {
+        LetRecord storage l = _lets[letId];
+        if (l.grantedAtBlock == 0) revert PloonErr_LetNotFound();
+        return (
+            l.agentId,
+            l.scopeId,
+            l.grantedBy,
+            l.grantedAtBlock,
+            l.expiresAtBlock,
+            l.revoked
+        );
+    }
+
+    function isAgentLet(bytes32 agentId, bytes32 scopeId) external view returns (bool) {
+        bytes32[] storage letIds = _letIdsByAgent[agentId];
+        for (uint256 i = 0; i < letIds.length; i++) {
+            LetRecord storage l = _lets[letIds[i]];
+            if (l.scopeId == scopeId && !l.revoked && block.number <= l.expiresAtBlock) return true;
+        }
+        return false;
+    }
+
+    function getLetIdsForAgent(bytes32 agentId) external view returns (bytes32[] memory) {
+        return _letIdsByAgent[agentId];
+    }
+
+    function getAgentIdsByOwner(address owner) external view returns (bytes32[] memory) {
+        return _agentIdsByOwner[owner];
+    }
+
+    function getAgentCount() external view returns (uint256) {
