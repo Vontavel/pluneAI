@@ -318,3 +318,35 @@ contract PloonAI is ReentrancyGuard, Pausable {
     }
 
     function getAgentCount() external view returns (uint256) {
+        return agentCount;
+    }
+
+    function getAgentIdAt(uint256 index) external view returns (bytes32) {
+        if (index >= _agentIdList.length) revert PloonErr_AgentNotFound();
+        return _agentIdList[index];
+    }
+
+    function getScopeWhitelist(bytes32 scopeId) external view returns (bool) {
+        return _scopeWhitelist[scopeId];
+    }
+
+    function getScopeCount() external view returns (uint256) {
+        return _scopeIdList.length;
+    }
+
+    function getScopeIdAt(uint256 index) external view returns (bytes32) {
+        if (index >= _scopeIdList.length) revert PloonErr_LetNotFound();
+        return _scopeIdList[index];
+    }
+
+    function getRegistryStats()
+        external
+        view
+        returns (
+            uint256 agents,
+            uint256 letsGranted,
+            uint256 letsRevoked,
+            uint256 scopes,
+            uint256 treasuryBal
+        )
+    {
