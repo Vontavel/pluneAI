@@ -126,3 +126,35 @@ contract PloonAI is ReentrancyGuard, Pausable {
         agentCount = 0;
         totalLetsGranted = 0;
         totalLetsRevoked = 0;
+        treasuryBalance = 0;
+        scopeWhitelistCount = 0;
+        _letNonce = 0;
+        _seedScopes();
+    }
+
+    function _seedScopes() private {
+        bytes32[] memory scopes = new bytes32[](8);
+        scopes[0] = keccak256("scope.default");
+        scopes[1] = keccak256("scope.query");
+        scopes[2] = keccak256("scope.execute");
+        scopes[3] = keccak256("scope.oracle");
+        scopes[4] = keccak256("scope.storage");
+        scopes[5] = keccak256("scope.delegate");
+        scopes[6] = keccak256("scope.mainnet");
+        scopes[7] = keccak256("scope.testnet");
+        for (uint256 i = 0; i < scopes.length && scopeWhitelistCount < PLOON_MAX_SCOPES; i++) {
+            if (!_scopeWhitelist[scopes[i]]) {
+                _scopeWhitelist[scopes[i]] = true;
+                _scopeIdList.push(scopes[i]);
+                scopeWhitelistCount++;
+            }
+        }
+    }
+
+    function enlistAgent(bytes32 agentId, uint256 capabilityBits, bytes32 configHash)
+        external
+        whenNotPaused
+        nonReentrant
+    {
+        if (agentId == bytes32(0)) revert PloonErr_ZeroAgentId();
+        if (agentCount >= PLOON_MAX_AGENTS) revert PloonErr_AgentCapReached();
