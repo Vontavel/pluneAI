@@ -382,3 +382,35 @@ contract PloonAI is ReentrancyGuard, Pausable {
     function getGenesisBlock() external view returns (uint256) {
         return genesisBlock;
     }
+
+    function getPloonSeed() external view returns (bytes32) {
+        return ploonSeed;
+    }
+
+    function validateCapabilityBits(uint256 bits) external pure returns (uint256) {
+        return bits & PLOON_CAP_ALL;
+    }
+
+    function isScopeAllowed(bytes32 scopeId) external view returns (bool) {
+        return _scopeWhitelist[scopeId];
+    }
+
+    function getLetDetails(bytes32 letId)
+        external
+        view
+        returns (
+            bytes32 agentId,
+            bytes32 scopeId,
+            bool active
+        )
+    {
+        LetRecord storage l = _lets[letId];
+        if (l.grantedAtBlock == 0) revert PloonErr_LetNotFound();
+        bool active = !l.revoked && block.number <= l.expiresAtBlock;
+        return (l.agentId, l.scopeId, active);
+    }
+
+    function getAgentOwner(bytes32 agentId) external view returns (address) {
+        AgentRecord storage a = _agents[agentId];
+        if (a.enlistedAtBlock == 0) revert PloonErr_AgentNotFound();
+        return a.owner;
