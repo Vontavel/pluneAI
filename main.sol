@@ -158,3 +158,35 @@ contract PloonAI is ReentrancyGuard, Pausable {
     {
         if (agentId == bytes32(0)) revert PloonErr_ZeroAgentId();
         if (agentCount >= PLOON_MAX_AGENTS) revert PloonErr_AgentCapReached();
+        AgentRecord storage a = _agents[agentId];
+        if (a.enlistedAtBlock != 0) revert PloonErr_AgentAlreadyEnlisted();
+        if (capabilityBits > PLOON_CAP_ALL) capabilityBits = capabilityBits & PLOON_CAP_ALL;
+        a.agentId = agentId;
+        a.owner = msg.sender;
+        a.capabilityBits = capabilityBits;
+        a.configHash = configHash;
+        a.enlistedAtBlock = block.number;
+        a.retired = false;
+        _agentIdList.push(agentId);
+        _agentIdsByOwner[msg.sender].push(agentId);
+        agentCount++;
+        emit AgentEnlisted(agentId, msg.sender, capabilityBits, configHash, block.number);
+    }
+
+    function letAgent(bytes32 agentId, bytes32 scopeId, uint256 ttlBlocks)
+        external
+        onlyGovernor
+        whenNotPaused
+        nonReentrant
+    {
+        if (agentId == bytes32(0)) revert PloonErr_ZeroAgentId();
+        if (scopeId == bytes32(0)) revert PloonErr_ZeroScopeId();
+        AgentRecord storage a = _agents[agentId];
+        if (a.enlistedAtBlock == 0 || a.retired) revert PloonErr_AgentNotFound();
+        if (!_scopeWhitelist[scopeId]) revert PloonErr_ScopeNotWhitelisted();
+        bytes32[] storage letIds = _letIdsByAgent[agentId];
+        if (letIds.length >= PLOON_MAX_LETS_PER_AGENT) revert PloonErr_LetCapReached();
+        if (ttlBlocks < PLOON_MIN_LET_TTL_BLOCKS) ttlBlocks = PLOON_MIN_LET_TTL_BLOCKS;
+        if (ttlBlocks > PLOON_MAX_LET_TTL_BLOCKS) ttlBlocks = PLOON_MAX_LET_TTL_BLOCKS;
+        uint256 expiresAt = block.number + ttlBlocks;
+        bytes32 letId = keccak256(abi.encodePacked(agentId, scopeId, block.number, _letNonce));
